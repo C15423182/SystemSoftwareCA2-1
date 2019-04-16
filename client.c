@@ -1,67 +1,63 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
-#define PORT 8081
+#define PORT 8082
 
-int main(int argc, char *argv[])
-{
-	int SID;
-	struct sockaddr_in server;
-	char clientMessage[1024];
-	char serverMessage[1024];
+int main(){
 
-	// create socket
-	SID = socket(AF_INET, SOCK_STREAM, 0);
-	if(SID == -1)
+	int clientSocket, ret;
+	struct sockaddr_in serverAddr;
+	char buffer[1024];
+
+	clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+	if(clientSocket < 0)
 	{
-		printf("Error creating socket!\n");
+		printf("[-]Error in connection.\n");
+		exit(1);
 	}
-	else
+	printf("[+]Client Socket is created.\n");
+
+	memset(&serverAddr, '\0', sizeof(serverAddr));
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = htons(PORT);
+	serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+	ret = connect(clientSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+	if(ret < 0)
 	{
-		printf("Socket is live my pluggg\n");
+		printf("[-]Error in connection.\n");
+		exit(1);
 	}
-
-
-	// set sockaddr_in variables
-	server.sin_port = htons(PORT);
-	server.sin_addr.s_addr = inet_addr("127.0.0.1");
-	server.sin_family = AF_INET; // IPV4 protocol
-
-	if(connect(SID, (struct sockaddr *)&server, sizeof(server)) < 0)
-	{
-		printf("connect failed.Error\n");
-		return 1;
-	}
-	
-	printf("Successfully connected to server\n");
-
+	printf("[+]Connected to Server.\n");
 
 	while(1)
 	{
-		printf("\nEnter Message: \n");
-		scanf("%s", clientMessage);
+		printf("Client: \t");
+		scanf("%s", &buffer[0]);
+		send(clientSocket, buffer, strlen(buffer), 0);
 
-		// send data
-		if(send(SID,clientMessage, strlen(clientMessage), 0) < 0)
+		if(strcmp(buffer, "exit") == 0)
 		{
-			printf("Error sending message\n");
-			return 1;
+			close(clientSocket);
+			printf("[-]Disconnected from server.\n");
+			exit(1);
 		}
 
-		// Receive a reply from the server
-		if( recv(SID, serverMessage, 500, 0) < 0)
+		if(recv(clientSocket, buffer, 1024, 0) < 0)
 		{
-			printf("Error receving data\n");
-			break;
+			printf("[-]Error in receiving data.\n");
 		}
-
-		printf("\nServer sent: ");
-		printf(serverMessage);
+		else
+		{
+			printf("Server: \t%s\n", buffer);
+		}
 	}
 
-	close(SID);
 	return 0;
 }

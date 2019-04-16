@@ -1,97 +1,95 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
-#define PORT 8081
+#define PORT 8082
 
-int main(int argc, char *argv[])
+int main()
 {
-	int socket_discriptor; 
-	int clientSocket;
-	int conntSize; // Size of struct 
-	int READSIZE; // Size of sockaddr for client connection
 
-	struct sockaddr_in server, client;
-	char message[1024];
+	int sockfd, ret;
+	struct sockaddr_in server;
 
-	// create socket
-	socket_discriptor = socket(AF_INET, SOCK_STREAM, 0);
-	if(socket_discriptor == -1)
+	int newSocket;
+	struct sockaddr_in newAddr;
+
+	socklen_t addr_size;
+
+	char buffer[1024];
+	pid_t childpid;
+
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if(sockfd < 0)
 	{
-		printf("Could not create socket");
+		printf("[-]Error in connection.\n");
+		exit(1);
 	}
-	else
-	{
-		printf("Socket sucessfully created!\n");
-	}
+	printf("[+]Server Socket is created.\n");
 
-	// set sockaddr_in variables
-	server.sin_port = htons(PORT);// set the port for communication
-	server.sin_family = AF_INET; // use IPV4 protocol
+	memset(&server, '\0', sizeof(server));
+	server.sin_family = AF_INET;
+	server.sin_port = htons(PORT);
 	server.sin_addr.s_addr = INADDR_ANY; 
-	// when the INADDR_ANY is specified in the bind call, 
-	// the socket will be bound to all local interfaces
+    // When INADDR_ANY is specified in the bind call, 
+    //the  socket will  be bound to all local interfaces. 
 
-
-
-	// bind time
-
-	if(bind(socket_discriptor,(struct sockaddr *)&server, sizeof(server)) < 0)
+	ret = bind(sockfd, (struct sockaddr*)&server, sizeof(server));
+	if(ret < 0)
 	{
-		perror("Bind issue!!\n");
-		return 1;
+		printf("[-]Error in binding.\n");
+		exit(1);
+	}
+	printf("[+]Bind to port %d\n", PORT);
+
+	if(listen(sockfd, 10) == 0)
+	{
+		printf("[+]Listening....\n");
 	}
 	else
 	{
-		printf("Bind complete fam!\n");
-	}
-
-	// listen for a connection 
-	listen(socket_discriptor, 3);
-
-	// accept any incomming connection
-	printf("Waiting for connection from client>>\n");
-	conntSize = sizeof(struct sockaddr_in);
-
-
-
-	clientSocket = accept(socket_discriptor, (struct sockaddr *)&client, (socklen_t*)&conntSize);
-	if(clientSocket < 0)
-	{
-		perror("Can't establish connection");
-		return 1;
-	}
-	else
-	{
-		printf("Connection accepted from %s:%d\n",inet_ntoa(server.sin_addr),ntohs(server.sin_port) );
+		printf("[-]Error in binding.\n");
 	}
 
 
 	while(1)
 	{
-		if(strcmp(message, "exit") == 0)
+		newSocket = accept(sockfd, (struct sockaddr*)&newAddr, &addr_size);
+		if(newSocket < 0)
 		{
-			printf("Dissconcted from %s:%d\n",inet_ntoa(server.sin_addr),ntohs(server.sin_port));
-			break;
+			exit(1);
 		}
-		memset(message, 0, 1024);
-		READSIZE = recv(clientSocket, message, 2000, 0);
-		printf("Client %s:%d said: %s",inet_ntoa(server.sin_addr),ntohs(server.sin_port),message);
-		write(clientSocket,"What!?", strlen("What!?"));
+		printf("Connection accepted from %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
+
+		if((childpid = fork()) == 0)
+		{
+			close(sockfd);
+
+			while(1)
+			{
+				recv(newSocket, buffer, 1024, 0);
+				if(strcmp(buffer, "exit") == 0)
+				{
+					printf("Disconnected from %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
+					break;
+				}
+				else
+				{
+					printf("Client: %s\n", buffer);
+					send(newSocket, buffer, strlen(buffer), 0);
+					bzero(buffer, sizeof(buffer));
+				}
+			}
+		}
+
 	}
 
-	if(READSIZE == 0)
-    {
-        puts("Client disconnected");
-        fflush(stdout);
-    }
-    else if(READSIZE == -1)
-    {
-        perror("read error");
-    }
-     
-    return 0;
-	
+	close(newSocket);
+
+
+	return 0;
 }
