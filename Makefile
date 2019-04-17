@@ -1,9 +1,8 @@
-myprogServer :	server.o
-	gcc -o myprogServer server.o
+myprogServer :	threadedServer.o
+	gcc -o myprogServer threadedServer.o -lpthread
 
-server.o :	server.c
-	gcc -c server.c
-
+threadedServer.o :	threadedServer.c
+	gcc -c threadedServer.c -lpthread
 
 clean : 
-	rm myprogServer server.o
+	rm myprogServer threadedServer.o
