@@ -8,16 +8,21 @@
 
 #define PORT 8082
 
+pthread_mutex_t lock_x; // this is used for the mutex lock for shared resources
 struct sockaddr_in cliaddr, servaddr; // global variables initliased so i can use them inside the server thread handler to determine who left!
-void *server_handler (void *fd_pointer);
+void *server_handler (void *fd_pointer); // server handler function that will handle each thread coming in. 
 
 int main()
 {
     int listenfd, connfd, *new_sock;
     socklen_t clilen;
     
-   listenfd = socket(AF_INET,SOCK_STREAM,0);
-   
+    listenfd = socket(AF_INET,SOCK_STREAM,0);
+    
+    // create the lock 
+    pthread_mutex_init(&lock_x,NULL);
+
+
     if (listenfd == -1)
     {    
         printf("[-]Error in creating Socket.\n");
@@ -31,11 +36,11 @@ int main()
     servaddr.sin_addr.s_addr = INADDR_ANY;
     servaddr.sin_port = htons(PORT);
    
-   if (bind(listenfd,(struct sockaddr *)&servaddr,sizeof(servaddr)) < 0)
-   {
-	    printf("[-]Error in binding.\n");
-		exit(1);
-   }
+    if (bind(listenfd,(struct sockaddr *)&servaddr,sizeof(servaddr)) < 0)
+    {
+        printf("[-]Error in binding.\n");
+        exit(1);
+    }
    
     printf("[+]Bind to port %d\n", PORT);
 
@@ -74,12 +79,23 @@ int main()
 
 void *server_handler (void *fd_pointer)
 {
-	printf("Hello From Thread Server Handler \n");
+    printf("Hello from the thread function my ID is : %d\n",pthread_self());
+
 	int sock = *(int *)fd_pointer;
     int read_size, write_size;
-    char *message;
 	static char client_message[2000];
-    message = " \nCustom Message from thread handler \n";
+
+    // get access to the lock
+    pthread_mutex_lock(&lock_x);
+
+    printf("PERFORM APPLICATION LOGIC HERE\n");
+
+    printf("I CANT TALK IN THE SERVER BEFORE THIS MESSAGE EXECUTES\n");
+
+    // release the lock 
+    pthread_mutex_unlock(&lock_x);
+
+    printf("I CAN TALK NOW IN THE SERVER\n");
 
     while((read_size = recv(sock,client_message,2000,0)) > 0)
     {
