@@ -5,18 +5,21 @@
 #include<arpa/inet.h> 
 #include<unistd.h>    
 #include<pthread.h> 
+#include <grp.h>
+#include <pwd.h>
 
 #define PORT 8082
 
 pthread_mutex_t lock_x; // this is used for the mutex lock for shared resources
 struct sockaddr_in cliaddr, servaddr; // global variables initliased so i can use them inside the server thread handler to determine who left!
+char usernameFromClient[] = ""; 
 void *server_handler (void *fd_pointer); // server handler function that will handle each thread coming in. 
 
 int main()
 {
     int listenfd, connfd, *new_sock;
     socklen_t clilen;
-    
+
     listenfd = socket(AF_INET,SOCK_STREAM,0);
     
     // create the lock 
@@ -59,7 +62,7 @@ int main()
     while ((connfd = accept(listenfd,(struct sockaddr *)&cliaddr,&clilen)))
     {
         printf("Connection accepted from %s:%d\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
-        
+
         // create new thread to handle each incomming connection
         pthread_t server_thread;
         new_sock = malloc(sizeof *new_sock); // allocate the right amount of bytes required for the socket (instead of a hard coded integer)
@@ -85,6 +88,7 @@ void *server_handler (void *fd_pointer)
     int read_size, write_size;
 	static char client_message[2000];
 
+    /*
     // get access to the lock
     pthread_mutex_lock(&lock_x);
 
@@ -96,6 +100,7 @@ void *server_handler (void *fd_pointer)
     pthread_mutex_unlock(&lock_x);
 
     printf("I CAN TALK NOW IN THE SERVER\n");
+    */
 
     while((read_size = recv(sock,client_message,2000,0)) > 0)
     {
