@@ -8,7 +8,15 @@
 #include <grp.h>
 #include <pwd.h>
 
+//global variables
 #define PORT 8082
+int userID;
+int myGroupIds[50]; // temporary array to hold user group ID's
+
+// declare function
+void getGroupIDs(char *user);
+void changeID(int myID);
+void getFile(int sock);
 
 pthread_mutex_t lock_x; // this is used for the mutex lock for shared resources
 struct sockaddr_in cliaddr, servaddr; // global variables initliased so i can use them inside the server thread handler to determine who left!
@@ -102,15 +110,63 @@ void *server_handler (void *fd_pointer)
     printf("I CAN TALK NOW IN THE SERVER\n");
     */
 
+
+    // call function to receive file
+    getFile(sock);
+    
+    
     while((read_size = recv(sock,client_message,2000,0)) > 0)
     {
+        
+        char userToSearchFor[100];
+        char FolderToSearchFor[100];
+        char FilePathToSearchFor[100];
 
         if(strcmp(client_message, "exit") == 0)
         {
             printf("Client %s:%d has exited \n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
             break;
         }
-        printf("Message Size %d \n", read_size); // optional 
+
+        /* This for loop here splits the strings received from the client based on WHITE SPACE characters*/
+        /*
+        char newString[100][100]; 
+        int i,j,ctr;
+        j=0; ctr=0;
+
+        for(i=0;i<=(strlen(client_message));i++)
+        {
+            // if space found, assign NULL into newString[ctr]
+            if(client_message[i]==' ')
+            {
+                newString[ctr][j]='\0';
+                ctr++;  //for next word
+                j=0;    //for next word, init index to 0
+            }
+            else
+            {
+                newString[ctr][j]=client_message[i];
+                j++;
+            }
+        }
+        printf("Strings or words after split by space are :\n");
+        
+
+        // after we splitted the message copy it to each string
+        strcpy(FilePathToSearchFor,newString[0]);
+        strcpy(FolderToSearchFor,newString[1]);
+        strcpy(userToSearchFor,newString[2]);
+        
+        // check cooy has worked
+        printf("%s\n",FilePathToSearchFor);
+        printf("%s\n",FolderToSearchFor);
+        printf("%s\n",userToSearchFor);
+        */
+        // call function to get user ID's
+        //getGroupIDs(userToSearchFor);
+
+
+
         printf("Message Sent %s \n", client_message);
         write(sock,client_message,strlen(client_message));
         memset(client_message ,'\0', 2000); // free the buffer 
@@ -129,4 +185,161 @@ void *server_handler (void *fd_pointer)
     pthread_exit(NULL); 
      
     return 0;
+}
+
+
+void getGroupIDs(char *user)
+{
+    int j, ngroups;
+    gid_t *groups;
+    struct passwd *pw;
+    struct group *gr;
+    ngroups = 50;
+
+    groups = malloc(ngroups * sizeof (gid_t));
+    if (groups == NULL) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Fetch passwd structure (contains first group ID for user) */
+
+    pw = getpwnam(user);
+     if (pw == NULL) {
+        perror("getpwnam");
+        exit(EXIT_SUCCESS);
+    }
+
+    /* Retrieve group list */
+
+    if (getgrouplist(user, pw->pw_gid, groups, &ngroups) == -1) {
+        fprintf(stderr, "getgrouplist() returned -1; ngroups = %d\n",
+                ngroups);
+         exit(EXIT_FAILURE);
+    }
+
+    /* Display list of retrieved groups, along with group names */
+
+    fprintf(stderr, "User : %s belongs in %d groups\n", user, ngroups);
+     for (j = 0; j < ngroups; j++) 
+     {
+         printf("%d", groups[j]);
+        myGroupIds[j] = groups[j]; // add each group ID to array so we can search for them later.
+        gr = getgrgid(groups[j]);
+        if (gr != NULL)
+            printf(" (%s)", gr->gr_name);
+        printf("\n");
+    }
+
+    // from the retrieved groups assign the ID of the user that is actually logged in on the client
+    userID = myGroupIds[0];
+    
+    printf("User ID: %d\n",userID);
+    //changeID(userID);
+ 
+}
+
+void changeID(int myID)
+{
+    // find all ID's relating to each client
+    uid_t uid = getuid();
+    uid_t gid = getgid();
+    uid_t ueid = geteuid();
+    uid_t geid = getegid();
+
+    printf("User ID: %d\n",uid);
+    printf("Group ID: %d\n",gid);
+    printf("Effective User ID: %d\n",ueid);
+    printf("Effective User ID: %d\n",geid);
+
+    setgroups(50, myGroupIds); // set 50 as size of the list
+    if(setreuid(myID, uid) < 0)
+    {
+        printf("Error in changing REUID\n");
+    }
+
+    if(setregid(myID, gid) < 0)
+    {
+        printf("Error in changing REGID\n");
+    }
+
+    if(seteuid(myID) < 0)
+    {
+        printf("Error in changing EUID\n");
+    }
+
+    if(setegid(myID) < 0)
+    {
+        printf("Error in changing EGID\n");
+    }
+
+
+
+    printf("ID after it got changed\n");
+
+    printf("User ID: %d\n",getuid());
+    printf("Group ID: %d\n",getgid());
+    printf("Effective User ID: %d\n",geteuid());
+    printf("Effective User ID: %d\n",getegid());
+
+
+    // set back to root
+    int rootID = 0;
+    setreuid(rootID, uid);
+    setregid(rootID, gid);
+    seteuid(rootID);
+    setegid(rootID);
+
+}
+
+// ************************************ PUT THIS IN A SEPERATE FUNCTION LATER *********************************
+     // search for group ID to check if user can access or not
+     /*
+    int found = 0;
+    int searchfor = 1001;
+
+   for (int i=0; i<ngroups; i++)
+     {
+        if(myGroupIds[i] == searchfor)
+        {
+            found = 1;
+             break;
+        }
+    }
+
+    if(found == 1)
+     {
+        printf("\n group number found, access allowed\n");
+    }
+    else
+    {
+        printf("\n %s is not part of the group folder\n", user);
+    }
+    */
+
+
+void getFile(int sock)
+{
+    char file_buffer[512]; // Receiver buffer
+    char* file_name = "/home/fayezrahman/Desktop/serverFiles/test.txt";
+    FILE *file_open = fopen(file_name, "w");
+        if(file_open == NULL)
+            printf("File %s Cannot be opened file on server.\n", file_name);
+        else 
+        {
+            bzero(file_buffer, 512); 
+            int block_size = 0;
+            int i=0;
+            while((block_size = recv(sock, file_buffer, 512, 0)) > 0) 
+            {
+            printf("Data Received %d = %d\n",i,block_size);
+            int write_sz = fwrite(file_buffer, sizeof(char), block_size, file_open);
+            bzero(file_buffer, 512);
+            i++;
+            }
+            
+        }
+        printf("Transfer Complete!\n");
+        fclose(file_open); 
+        //*****************************
 }
