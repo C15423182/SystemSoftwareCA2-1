@@ -12,7 +12,7 @@
 #define PORT 8082
 void getUserRelatedID();
 void getGroupIDs();
-void sendFile(char FILEPATH, int sockfd);
+void sendFile(int sockfd);
 int main(int argc, char *argv[])
 {
     int sockfd;
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
   
     struct sockaddr_in servaddr; 
     /*
-    if(argc !=3)
+    if(argc !=2)
     {
         printf("Need to specify arguments\n");
         exit(1);
@@ -34,15 +34,15 @@ int main(int argc, char *argv[])
     */
     //else
     //{
-        strcpy(FILEPATH, argv[1]); // copy 2nd argument into file path
-        strcpy(FOLDER, argv[2]); // copy 3rd argument into folder
+        //strcpy(FILEPATH, argv[1]); // copy 2nd argument into file path
+        strcpy(FOLDER, argv[1]); // copy 3rd argument into folder
 
         char *user = getenv("USER");
         //printf("Details provided: Username logged in: %s\nFIlEPATH: %s\nFOLDER: %s",user,FILEPATH,FOLDER);
         strcpy(USER, user);
 
         // add spaces between each name
-        strcat(FILEPATH, " ");
+        //strcat(FILEPATH, " ");
         strcat(FOLDER, " ");
         strcat(USER, " ");
 
@@ -55,7 +55,6 @@ int main(int argc, char *argv[])
 
         printf("Username: %s",USER);
         printf("FOLDER: %s",FOLDER);
-        printf("FILEPATH: %s",FILEPATH);
     //}
     
 
@@ -87,7 +86,7 @@ int main(int argc, char *argv[])
             return 1;
         }*/
 
-        sendFile(FILEPATH,sockfd);
+        sendFile(sockfd);
 
 
         
@@ -124,7 +123,7 @@ int main(int argc, char *argv[])
     while (1)
     {
         // *********** Add main menu here, send file to marketing/sales/managemnet/etc , GET RID OF THE CHAT!!***********
-        printf("0- to transfer to root folder\nJust specify file path\n");
+        printf("Enter Message\n");
         scanf("%s",buffer);
 
         // if exit is typed, close connection and exit the client 
@@ -133,21 +132,6 @@ int main(int argc, char *argv[])
 			close(sockfd);
 			printf("[-]Disconnected from server.\n");
 			exit(1);
-		}
-
-        
-        // if exit is typed, close connection and exit the client 
-        if(strcmp(buffer, "0") == 0)
-		{
-            char filePath[2000];
-			printf("Type file path\n");
-            scanf("%s",filePath);
-
-            if (send(sockfd,filePath,strlen(filePath),0) < 0)
-            {
-                printf("Error Sending message \n");
-                return 1;
-            }
 		}
 
         /*
@@ -259,15 +243,18 @@ void getUserRelatedID()
 // }
 
 
-void sendFile(char FILEPATH, int sockfd)
+void sendFile(int sockfd)
 {
     // Client *********************************
     /*send to server*/
         
     char file_buffer[512]; 
-    char* file_name = FILEPATH;
-    printf("[Client] Sending %s to the Server... ", file_name);
-    FILE *file_open = fopen(file_name, "r");
+    //char* file_name = FILEPATH;
+    char temp[1000];
+    printf("Enter filepath\n");
+    scanf("%s",temp);
+    printf("[Client] Sending %s to the Server... ", temp);
+    FILE *file_open = fopen(temp, "r");
     bzero(file_buffer, 512); 
     int block_size,i=0; 
     while((block_size = fread(file_buffer, sizeof(char), 512, file_open)) > 0) 

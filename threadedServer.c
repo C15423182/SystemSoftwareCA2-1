@@ -282,6 +282,18 @@ void changeID(int myID)
     printf("Effective User ID: %d\n",geteuid());
     printf("Effective User ID: %d\n",getegid());
 
+    /*
+    // attemp to copy
+    char command[500];
+    strcpy(command, "cp /tmp/test.txt /home/fayezrahman/Desktop/CA2/SystemSoftwareCA2/sales/test.txt");
+    system(command);
+
+    if (chown("/home/fayezrahman/Desktop/CA2/SystemSoftwareCA2/sales/test", userID, userID) == 01)
+    {
+    //die("chown fail");
+    }
+    */
+
 
     // set back to root
     int rootID = 0;
@@ -321,7 +333,7 @@ void changeID(int myID)
 void getFile(int sock)
 {
     char file_buffer[512]; // Receiver buffer
-    char* file_name = "/home/fayezrahman/Desktop/serverFiles/test.txt";
+    char* file_name = "/tmp/test.txt";
     FILE *file_open = fopen(file_name, "w");
         if(file_open == NULL)
             printf("File %s Cannot be opened file on server.\n", file_name);
@@ -332,10 +344,10 @@ void getFile(int sock)
             int i=0;
             while((block_size = recv(sock, file_buffer, 512, 0)) > 0) 
             {
-            printf("Data Received %d = %d\n",i,block_size);
-            int write_sz = fwrite(file_buffer, sizeof(char), block_size, file_open);
-            bzero(file_buffer, 512);
-            i++;
+                printf("Data Received %d = %d\n",i,block_size);
+                int write_sz = fwrite(file_buffer, sizeof(char), block_size, file_open);
+                bzero(file_buffer, 512);
+                i++;
             }
             
         }
