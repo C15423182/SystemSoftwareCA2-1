@@ -112,10 +112,10 @@ void *server_handler (void *fd_pointer)
 
 
     // call function to receive file
-    getFile(sock);
+    //getFile(sock);
     
-    
-    while((read_size = recv(sock,client_message,2000,0)) > 0)
+    // while((read_size = recv(sock,client_message,2000,0)) > 0)
+    while(1)
     {
         
         char userToSearchFor[100];
@@ -128,47 +128,110 @@ void *server_handler (void *fd_pointer)
             break;
         }
 
-        /* This for loop here splits the strings received from the client based on WHITE SPACE characters*/
-        /*
-        char newString[100][100]; 
-        int i,j,ctr;
-        j=0; ctr=0;
+    
+        //receive credentials
+        read_size = recv(sock,client_message,2000,0);
 
-        for(i=0;i<=(strlen(client_message));i++)
+        if(read_size == 0 )
         {
-            // if space found, assign NULL into newString[ctr]
-            if(client_message[i]==' ')
+            //printf("Error receeiving credetnials\n");
+            memset(client_message ,'\0', 2000); // free the buffer 
+            fflush(stdout);
+            break;
+        }
+        else
+        {
+            printf("Message Sent From client is: %s \n", client_message);
+            /* This for loop here splits the strings received from the client based on WHITE SPACE characters*/
+            
+            char newString[100][100]; 
+            int i,j,ctr;
+            j=0; ctr=0;
+
+            for(i=0;i<=(strlen(client_message));i++)
             {
-                newString[ctr][j]='\0';
-                ctr++;  //for next word
-                j=0;    //for next word, init index to 0
+                // if space found, assign NULL into newString[ctr]
+                if(client_message[i]==' ')
+                {
+                    newString[ctr][j]='\0';
+                    ctr++;  //for next word
+                    j=0;    //for next word, init index to 0
+                }
+                else
+                {
+                    newString[ctr][j]=client_message[i];
+                    j++;
+                }
+            }
+            printf("Credentials received Extracted are:\n");
+            
+
+            // after we splitted the message copy it to each string
+            //strcpy(FilePathToSearchFor,newString[0]);
+            strcpy(FolderToSearchFor,newString[0]);
+            strcpy(userToSearchFor,newString[1]);
+            
+            
+            
+            // check cooy has worked
+            //printf("%s\n",FilePathToSearchFor);
+            printf("Folder: %s\n",FolderToSearchFor);
+            printf("Username: %s\n",userToSearchFor);
+            
+            // call function to get user ID's
+            //getGroupIDs(userToSearchFor);
+
+            
+            //write(sock,client_message,strlen(client_message));
+            memset(client_message ,'\0', 2000); // free the buffer 
+            
+
+            // now i want to receive the file
+            read_size = recv(sock,client_message,2000,0);
+
+            if(read_size == 0 )
+            {
+                printf("Error in receving file \n");
+                fflush(stdout);
+                break;
             }
             else
             {
-                newString[ctr][j]=client_message[i];
-                j++;
+                printf("Filename Sent From client is: %s \n", client_message);
+                
+                char file_buffer[512]; // Receiver buffer
+                char* file_name = "/tmp/test.txt";
+                FILE *file_open = fopen(file_name, "w");
+                if(file_open == NULL)
+                {
+                    printf("File %s Cannot be opened file on server.\n", file_name);
+                }
+                else 
+                {
+                    // code is getting here but not executing??
+                    bzero(file_buffer, 512); 
+                    int block_size = 0;
+                    int i=0;
+                    while((block_size = recv(sock, file_buffer, 512, 0)) > 0) 
+                    {
+                        printf("Data Received %d = %d\n",i,block_size);
+                        int write_sz = fwrite(file_buffer, sizeof(char), block_size, file_open);
+                        bzero(file_buffer, 512);
+                        i++;
+                    }
+                    
+                }
+                printf("Transfer Complete!\n");
+                fclose(file_open); 
+                //*****************************
+
             }
-        }
-        printf("Strings or words after split by space are :\n");
-        
-
-        // after we splitted the message copy it to each string
-        strcpy(FilePathToSearchFor,newString[0]);
-        strcpy(FolderToSearchFor,newString[1]);
-        strcpy(userToSearchFor,newString[2]);
-        
-        // check cooy has worked
-        printf("%s\n",FilePathToSearchFor);
-        printf("%s\n",FolderToSearchFor);
-        printf("%s\n",userToSearchFor);
-        */
-        // call function to get user ID's
-        //getGroupIDs(userToSearchFor);
+        } // end else
 
 
+        // printf("Message Sent %s \n", client_message);
+        // write(sock,client_message,strlen(client_message));
 
-        printf("Message Sent %s \n", client_message);
-        write(sock,client_message,strlen(client_message));
         memset(client_message ,'\0', 2000); // free the buffer 
     }
     if(read_size == 0)
@@ -335,23 +398,25 @@ void getFile(int sock)
     char file_buffer[512]; // Receiver buffer
     char* file_name = "/tmp/test.txt";
     FILE *file_open = fopen(file_name, "w");
-        if(file_open == NULL)
-            printf("File %s Cannot be opened file on server.\n", file_name);
-        else 
+    if(file_open == NULL)
+    {
+        printf("File %s Cannot be opened file on server.\n", file_name);
+    }
+    else 
+    {
+        bzero(file_buffer, 512); 
+        int block_size = 0;
+        int i=0;
+        while((block_size = recv(sock, file_buffer, 512, 0)) > 0) 
         {
-            bzero(file_buffer, 512); 
-            int block_size = 0;
-            int i=0;
-            while((block_size = recv(sock, file_buffer, 512, 0)) > 0) 
-            {
-                printf("Data Received %d = %d\n",i,block_size);
-                int write_sz = fwrite(file_buffer, sizeof(char), block_size, file_open);
-                bzero(file_buffer, 512);
-                i++;
-            }
-            
+            printf("Data Received %d = %d\n",i,block_size);
+            int write_sz = fwrite(file_buffer, sizeof(char), block_size, file_open);
+            bzero(file_buffer, 512);
+            i++;
         }
-        printf("Transfer Complete!\n");
-        fclose(file_open); 
-        //*****************************
+        
+    }
+    printf("Transfer Complete!\n");
+    fclose(file_open); 
+    //*****************************
 }

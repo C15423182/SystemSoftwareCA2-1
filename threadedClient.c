@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     //else
     //{
         //strcpy(FILEPATH, argv[1]); // copy 2nd argument into file path
-        strcpy(FOLDER, argv[1]); // copy 3rd argument into folder
+        //strcpy(FOLDER, argv[1]); // copy 3rd argument into folder
 
         char *user = getenv("USER");
         //printf("Details provided: Username logged in: %s\nFIlEPATH: %s\nFOLDER: %s",user,FILEPATH,FOLDER);
@@ -43,8 +43,8 @@ int main(int argc, char *argv[])
 
         // add spaces between each name
         //strcat(FILEPATH, " ");
-        strcat(FOLDER, " ");
-        strcat(USER, " ");
+        //strcat(FOLDER, " ");
+        //strcat(USER, " ");
 
         //strcat(FILEPATH,FOLDER); // concatentate filepath with folder, 
         //strcat(FILEPATH,USER); // concatentate filepath with user (so file path variable now contains, filepath, folder, and user)
@@ -53,8 +53,8 @@ int main(int argc, char *argv[])
         //printf("%s\n",finalDetails);
 
 
-        printf("Username: %s",USER);
-        printf("FOLDER: %s",FOLDER);
+        //printf("Username: %s",USER);
+        //printf("FOLDER: %s",FOLDER);
     //}
     
 
@@ -86,27 +86,31 @@ int main(int argc, char *argv[])
             return 1;
         }*/
 
-        sendFile(sockfd);
+        // send file first
+        //sendFile(sockfd);
 
+        // ask for folder
+        printf("Enter folder name you want to send file to\n");
+        scanf("%s",FOLDER);
 
+        strcat(FOLDER, " ");
+        strcat(USER, " ");
         
-        /*
-        printf("Sending folder destination\n");
+        //join two strings together to send
+        strcat(FOLDER,USER);
+
+        printf("Sending Credentials over\n");
         if (send(sockfd,FOLDER,strlen(FOLDER),0) < 0)
         {
             printf("Error Sending message \n");
             return 1;
         }
 
+        // send file now
+        sendFile(sockfd);
 
-        printf("Sending username logged in\n");
-        if (send(sockfd,USER,strlen(USER),0) < 0)
-        {
-            printf("Error Sending message \n");
-            return 1;
-        }
-        */
-
+        printf("Exiting client now, i put this in\n");
+        /*
         if(recv(sockfd,server_reply,2000,0 ) < 0)
         {
             printf("Error Receving message");
@@ -116,10 +120,12 @@ int main(int argc, char *argv[])
         {
             printf("Server Reply: %s \n",server_reply );
         }
+        */
+        
         
 
 
-    
+    /*
     while (1)
     {
         // *********** Add main menu here, send file to marketing/sales/managemnet/etc , GET RID OF THE CHAT!!***********
@@ -134,13 +140,13 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
-        /*
+        
         if (send(sockfd,buffer,strlen(buffer),0) < 0)
         {
             printf("Error Sending message \n");
             return 1;
         }
-        */
+        
         
         if(recv(sockfd,server_reply,2000,0 ) < 0)
         {
@@ -149,98 +155,10 @@ int main(int argc, char *argv[])
         }
         printf("Server Reply: %s \n",server_reply );
         
-    }
+    }*/
     close(sockfd);
     return 0;
 } // end main
-
-
-void getUserRelatedID()
-{
-    // find all ID's relating to each client
-    uid_t uid = getuid();
-    uid_t gid = getgid();
-    uid_t ueid = geteuid();
-    uid_t geid = getegid();
-
-    printf("User ID: %d\n",uid);
-    printf("Group ID: %d\n",gid);
-    printf("Effective User ID: %d\n",ueid);
-    printf("Effective User ID: %d\n",geid);
-}
-
-
-// void getGroupIDs()
-// {
-//     int j, ngroups;
-//     gid_t *groups;
-//     struct passwd *pw;
-//     struct group *gr;
-//     int myGroupIds[50];
-
-//     //char *user = getenv("USER");
-
-//     ngroups = 50;
-
-//     groups = malloc(ngroups * sizeof (gid_t));
-//     if (groups == NULL) {
-//         perror("malloc");
-//         exit(EXIT_FAILURE);
-//     }
-
-//     /* Fetch passwd structure (contains first group ID for user) */
-
-//     pw = getpwnam(user);
-//     if (pw == NULL) {
-//         perror("getpwnam");
-//         exit(EXIT_SUCCESS);
-//     }
-
-//     /* Retrieve group list */
-
-//     if (getgrouplist(user, pw->pw_gid, groups, &ngroups) == -1) {
-//         fprintf(stderr, "getgrouplist() returned -1; ngroups = %d\n",
-//                 ngroups);
-//         exit(EXIT_FAILURE);
-//     }
-
-//     /* Display list of retrieved groups, along with group names */
-
-//     fprintf(stderr, "User : %s belongs in %d groups\n", user, ngroups);
-//     for (j = 0; j < ngroups; j++) 
-//     {
-//         printf("%d", groups[j]);
-//         myGroupIds[j] = groups[j]; // add each group ID to array so we can search for them later.
-//         gr = getgrgid(groups[j]);
-//         if (gr != NULL)
-//             printf(" (%s)", gr->gr_name);
-//         printf("\n");
-//     }
-
-
-// // ************************************ PUT THIS IN A SEPERATE FUNCTION LATER *********************************
-//     // search for group ID to check if user can access or not
-//     int found = 0;
-//     int searchfor = 1001;
-
-//     for (int i=0; i<ngroups; i++)
-//     {
-//         if(myGroupIds[i] == searchfor)
-//         {
-//             found = 1;
-//             break;
-//         }
-//     }
-
-//     if(found == 1)
-//     {
-//         printf("\n group number found, access allowed\n");
-//     }
-//     else
-//     {
-//         printf("\n %s is not part of the group folder\n", user);
-//     }
-// }
 
 
 void sendFile(int sockfd)
@@ -253,21 +171,32 @@ void sendFile(int sockfd)
     char temp[1000];
     printf("Enter filepath\n");
     scanf("%s",temp);
-    printf("[Client] Sending %s to the Server... ", temp);
     FILE *file_open = fopen(temp, "r");
-    bzero(file_buffer, 512); 
-    int block_size,i=0; 
-    while((block_size = fread(file_buffer, sizeof(char), 512, file_open)) > 0) 
+    if(file_open == NULL)
     {
-        printf("Data Sent %d = %d\n",i,block_size);
-        if(send(sockfd, file_buffer, block_size, 0) < 0) 
-        {
-            exit(1);
-        }
-        bzero(file_buffer, 512);
-        i++;
-        
+        printf("File %s Cannot be found on client. exiting program..\n", temp);
+        exit(EXIT_FAILURE);
     }
-    printf("File transfer complete from client side\n");
-    fclose(file_open);
+    else
+    {
+        printf("[Client] Sending %s to the Server... ", temp);
+        bzero(file_buffer, 512); 
+        int block_size,i=0; 
+        while((block_size = fread(file_buffer, sizeof(char), 512, file_open)) > 0) 
+        {
+            printf("Data Sent %d = %d\n",i,block_size);
+            if(send(sockfd, file_buffer, block_size, 0) < 0) 
+            {
+                printf("Sending failed\n");
+                exit(1);
+            }
+            bzero(file_buffer, 512);
+            i++;
+            
+        }
+        printf("File transfer complete from client side\n");
+        fclose(file_open);
+    }
+    
+    
 }
