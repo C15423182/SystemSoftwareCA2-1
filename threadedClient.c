@@ -110,17 +110,7 @@ int main(int argc, char *argv[])
         sendFile(sockfd);
 
         printf("Exiting client now, i put this in\n");
-        /*
-        if(recv(sockfd,server_reply,2000,0 ) < 0)
-        {
-            printf("Error Receving message");
-            
-        }
-        else
-        {
-            printf("Server Reply: %s \n",server_reply );
-        }
-        */
+       
         
         
 
