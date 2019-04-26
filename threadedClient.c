@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include<sys/socket.h>    
-#include<arpa/inet.h> 
+#include <sys/socket.h>    
+#include <arpa/inet.h> 
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <grp.h>
@@ -25,37 +25,12 @@ int main(int argc, char *argv[])
     ssize_t n;
   
     struct sockaddr_in servaddr; 
-    /*
-    if(argc !=2)
-    {
-        printf("Need to specify arguments\n");
-        exit(1);
-    }
-    */
-    //else
-    //{
-        //strcpy(FILEPATH, argv[1]); // copy 2nd argument into file path
-        //strcpy(FOLDER, argv[1]); // copy 3rd argument into folder
+    
 
-        char *user = getenv("USER");
-        //printf("Details provided: Username logged in: %s\nFIlEPATH: %s\nFOLDER: %s",user,FILEPATH,FOLDER);
-        strcpy(USER, user);
+    char *user = getenv("USER");
+    strcpy(USER, user);
 
-        // add spaces between each name
-        //strcat(FILEPATH, " ");
-        //strcat(FOLDER, " ");
-        //strcat(USER, " ");
-
-        //strcat(FILEPATH,FOLDER); // concatentate filepath with folder, 
-        //strcat(FILEPATH,USER); // concatentate filepath with user (so file path variable now contains, filepath, folder, and user)
-        //copy the final string into one final string 
-        //strcpy(finalDetails,FILEPATH);
-        //printf("%s\n",finalDetails);
-
-
-        //printf("Username: %s",USER);
-        //printf("FOLDER: %s",FOLDER);
-    //}
+       
     
 
     sockfd = socket(AF_INET,SOCK_STREAM,0);
@@ -67,7 +42,7 @@ int main(int argc, char *argv[])
 	printf("[+]Client Socket is created.\n");
 
 
-    //bzero(&servaddr,sizeof (servaddr));
+    
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(PORT);
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -77,39 +52,49 @@ int main(int argc, char *argv[])
         printf("[-]Error in connection.\n");
 		exit(1);
     }
+    
 
+    
 
-        /*
-        if (send(sockfd,FILEPATH,strlen(FILEPATH),0) < 0)
-        {
-            printf("Error Sending message \n");
-            return 1;
-        }*/
-
-        // send file first
-        //sendFile(sockfd);
-
+    while(1)
+    {
         // ask for folder
         printf("Enter folder name you want to send file to\n");
+        printf("Sales\nMarketing\nOffers\nPromotions\nRoot\n");
         scanf("%s",FOLDER);
-
-        strcat(FOLDER, " ");
-        strcat(USER, " ");
-        
-        //join two strings together to send
-        strcat(FOLDER,USER);
-
-        printf("Sending Credentials over\n");
-        if (send(sockfd,FOLDER,strlen(FOLDER),0) < 0)
+        if(strcmp(FOLDER,"Sales") !=0 && strcmp(FOLDER,"Marketing") !=0
+            && strcmp(FOLDER,"Offers") !=0 && strcmp(FOLDER,"nPromotions") !=0
+            && strcmp(FOLDER,"Root") !=0)
         {
-            printf("Error Sending message \n");
-            return 1;
+            printf("Please enter valid destination\n");
         }
+        else
+        {
+            printf("Correct folder has been captured\n");
+            break;
+        }
+    }
 
-        // send file now
-        sendFile(sockfd);
+    strcat(FOLDER, " ");
+    strcat(USER, " ");
+        
+    //join two strings together to send
+    strcat(FOLDER,USER);
 
-        printf("Exiting client now, i put this in\n");
+    printf("Sending Credentials over\n");
+    if (send(sockfd,FOLDER,strlen(FOLDER),0) < 0)
+    {
+        printf("Error Sending message \n");
+        return 1;
+    }
+
+    // send file now
+    sendFile(sockfd);
+
+    printf("Exiting client now, i put this in\n");
+    close(sockfd);
+    return 0;
+
        
         
         
@@ -146,8 +131,6 @@ int main(int argc, char *argv[])
         printf("Server Reply: %s \n",server_reply );
         
     }*/
-    close(sockfd);
-    return 0;
 } // end main
 
 

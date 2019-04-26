@@ -1,10 +1,10 @@
-#include<stdio.h>
-#include<string.h>    
-#include<stdlib.h>    
-#include<sys/socket.h>
-#include<arpa/inet.h> 
-#include<unistd.h>    
-#include<pthread.h> 
+#include <stdio.h>
+#include <string.h>    
+#include <stdlib.h>    
+#include <sys/socket.h>
+#include <arpa/inet.h> 
+#include <unistd.h>    
+#include <pthread.h> 
 #include <grp.h>
 #include <pwd.h>
 
@@ -99,7 +99,6 @@ void *server_handler (void *fd_pointer)
     int read_size, write_size;
 	static char client_message[2000];
     
-    // while((read_size = recv(sock,client_message,2000,0)) > 0)
     while(1)
     {
         
@@ -165,7 +164,6 @@ void *server_handler (void *fd_pointer)
             
 
             // Then receive file
-        
             char file_buffer[512]; // Receiver buffer
             char* file_name = "/tmp/test.txt";
             FILE *file_open = fopen(file_name, "w");
@@ -290,7 +288,6 @@ void changeID(int myID)
     if (chown("/tmp/test.txt", userID, userID) == -1)
     {
         printf("Chown failed\n");
-        //die("chown fail");
     }
 
     // get access to the lock
@@ -334,7 +331,6 @@ void changeID(int myID)
     // If file entered is Sales
     if(strcmp(FolderToSearchFor,"Sales") == 0)
     {
-        printf("Authenticatoin succesful, copying files to Sales folder\n");
         char command[500];
         int checker;
         strcpy(command, "mv /tmp/test.txt /home/fayezrahman/Desktop/serverFiles/Sales");
@@ -342,10 +338,6 @@ void changeID(int myID)
         if(checker == -1)
         {
             printf("System command failed\n");
-        }
-        else
-        {
-            printf("Succesfully moved file\n");
         }
     }
     // If file entered is Marketing
@@ -359,16 +351,11 @@ void changeID(int myID)
         {
             printf("System command failed\n");
         }
-        else
-        {
-            printf("Succesfully moved file\n");
-        }
     }
 
     // If file entered is Sales
     if(strcmp(FolderToSearchFor,"Root") == 0)
     {
-        printf("Authenticatoin succesful, copying files to Root folder\n");
         char command[500];
         int checker;
         strcpy(command, "mv /tmp/test.txt /home/fayezrahman/Desktop/serverFiles/root");
@@ -376,10 +363,6 @@ void changeID(int myID)
         if(checker == -1)
         {
             printf("System command failed\n");
-        }
-        else
-        {
-            printf("Succesfully moved file\n");
         }
     }
 
@@ -393,39 +376,7 @@ void changeID(int myID)
     setregid(rootID, gid);
     seteuid(rootID);
     setegid(rootID);
-
-    printf("Should change back to root\n");
-    printf("User ID: %d\n",getuid());
-    printf("Group ID: %d\n",getgid());
-    printf("Effective User ID: %d\n",geteuid());
-    printf("Effective User ID: %d\n",getegid());
-
 }
-
-// ************************************ PUT THIS IN A SEPERATE FUNCTION LATER *********************************
-     // search for group ID to check if user can access or not
-     /*
-    int found = 0;
-    int searchfor = 1001;
-
-   for (int i=0; i<ngroups; i++)
-     {
-        if(myGroupIds[i] == searchfor)
-        {
-            found = 1;
-             break;
-        }
-    }
-
-    if(found == 1)
-     {
-        printf("\n group number found, access allowed\n");
-    }
-    else
-    {
-        printf("\n %s is not part of the group folder\n", user);
-    }
-    */
 
 
 void getFile(int sock)
