@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <grp.h>
 #include <pwd.h>
+#include <string.h>
 
 #define PORT 8082
 void getUserRelatedID();
@@ -17,20 +18,17 @@ int main(int argc, char *argv[])
 {
     int sockfd;
     char buffer[1000];
-    char server_reply[2000];
     char FOLDER[2000];
-    char FILEPATH[2000];
     char USER[2000];
-    char finalDetails[2000];
     ssize_t n;
   
     struct sockaddr_in servaddr; 
     
-
+    // get logged in user, store it in variable USER
     char *user = getenv("USER");
     strcpy(USER, user);
 
-       
+    
     
 
     sockfd = socket(AF_INET,SOCK_STREAM,0);
@@ -52,9 +50,7 @@ int main(int argc, char *argv[])
         printf("[-]Error in connection.\n");
 		exit(1);
     }
-    
 
-    
 
     while(1)
     {
@@ -91,37 +87,14 @@ int main(int argc, char *argv[])
     // send file now
     sendFile(sockfd);
 
-    printf("Exiting client now, i put this in\n");
+    printf("Exiting client now..\n");
     close(sockfd);
     return 0;
-
-       
-        
-        
-
+    
 
     /*
     while (1)
-    {
-        // *********** Add main menu here, send file to marketing/sales/managemnet/etc , GET RID OF THE CHAT!!***********
-        printf("Enter Message\n");
-        scanf("%s",buffer);
-
-        // if exit is typed, close connection and exit the client 
-        if(strcmp(buffer, "exit") == 0)
-		{
-			close(sockfd);
-			printf("[-]Disconnected from server.\n");
-			exit(1);
-		}
-
-        
-        if (send(sockfd,buffer,strlen(buffer),0) < 0)
-        {
-            printf("Error Sending message \n");
-            return 1;
-        }
-        
+    {        
         
         if(recv(sockfd,server_reply,2000,0 ) < 0)
         {
@@ -140,36 +113,38 @@ void sendFile(int sockfd)
     /*send to server*/
         
     char file_buffer[512]; 
-    //char* file_name = FILEPATH;
+    FILE *file_open;
     char temp[1000];
-    printf("Enter filepath\n");
-    scanf("%s",temp);
-    FILE *file_open = fopen(temp, "r");
-    if(file_open == NULL)
+    while(file_open == NULL)
     {
-        printf("File %s Cannot be found on client. exiting program..\n", temp);
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        printf("[Client] Sending %s to the Server... ", temp);
-        bzero(file_buffer, 512); 
-        int block_size,i=0; 
-        while((block_size = fread(file_buffer, sizeof(char), 512, file_open)) > 0) 
+        printf("Enter filepath\n");
+        scanf("%s",temp);
+        file_open = fopen(temp, "r");
+        if(file_open == NULL)
         {
-            printf("Data Sent %d = %d\n",i,block_size);
-            if(send(sockfd, file_buffer, block_size, 0) < 0) 
-            {
-                printf("Sending failed\n");
-                exit(1);
-            }
-            bzero(file_buffer, 512);
-            i++;
+            printf("File %s Cannot be found on client. Enter new file..\n", temp);
             
         }
-        printf("File transfer complete from client side\n");
-        fclose(file_open);
-    }
+        else
+        {
+            printf("[Client] Sending %s to the Server... ", temp);
+            bzero(file_buffer, 512); 
+            int block_size,i=0; 
+            while((block_size = fread(file_buffer, sizeof(char), 512, file_open)) > 0) 
+            {
+                printf("Data Sent %d = %d\n",i,block_size);
+                if(send(sockfd, file_buffer, block_size, 0) < 0) 
+                {
+                    printf("Sending failed\n");
+                    exit(1);
+                }
+                bzero(file_buffer, 512);
+                i++;
+                
+            }// end while
+            printf("File transfer complete from client side\n");
+            fclose(file_open);
+        }// end else
+    }// end big while
     
-    
-}
+} // end main
