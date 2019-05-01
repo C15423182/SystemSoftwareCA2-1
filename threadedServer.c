@@ -8,6 +8,7 @@
 #include <grp.h>
 #include <pwd.h>
 #include <string.h>
+#include "functions.h"
 
 //global variables
 #define PORT 8082
@@ -20,6 +21,7 @@ void changeID(int myID);
 void getFile(int sock);
 void copyFileToDestination();
 void *server_handler (void *fd_pointer); // server handler function that will handle each thread coming in. 
+void test();
 
 pthread_mutex_t lock_x; // this is used for the mutex lock for shared resources
 struct sockaddr_in cliaddr, servaddr; // global variables initliased so i can use them inside the server thread handler to determine who left!
@@ -48,7 +50,6 @@ int main()
     printf("[+]Server Socket is created.\n");
 
 
-    //bzero(&servaddr,sizeof (servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = INADDR_ANY;
     servaddr.sin_port = htons(PORT);
@@ -104,14 +105,6 @@ void *server_handler (void *fd_pointer)
 
     while(1)
     {
-        
-        if(strcmp(client_message, "exit") == 0)
-        {
-            printf("Client %s:%d has exited \n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
-            break;
-        }
-
-    
         //receive credentials
         read_size = recv(sock,client_message,2000,0);
 
@@ -153,13 +146,12 @@ void *server_handler (void *fd_pointer)
             strcpy(FolderToSearchFor,newString[0]);
             strcpy(userToSearchFor,newString[1]);
             
-            // check copy has worked, printf credentials
+            // check copy has worked, print credentials
             printf("Folder: %s\n",FolderToSearchFor);
             printf("Username: %s\n",userToSearchFor);
             
             memset(client_message ,'\0', 2000); // free the buffer 
             
-
             // Then receive file
             char file_buffer[512]; // Receiver buffer
             char* file_name = "/tmp/test.txt";
@@ -191,7 +183,6 @@ void *server_handler (void *fd_pointer)
             // call get Group ID's
             getGroupIDs(userToSearchFor);
 
-        
         } // end else
 
 
@@ -310,8 +301,9 @@ void changeID(int myID)
     printf("User ID: %d\n",getuid());
     printf("Effective User ID: %d\n",geteuid());
 
-    // copy files to destination 
-    copyFileToDestination();
+    // copy files to destination ( call the function inside copyFile.c )
+    //handles the transfering file from the tmp folder to the destination folder the user specified
+    copyFileToDestination(sock, FolderToSearchFor);
 
     // release the lock 
     pthread_mutex_unlock(&lock_x);
@@ -324,109 +316,3 @@ void changeID(int myID)
     seteuid(rootID);
     setegid(rootID);
 }
-
-
-void getFile(int sock)
-{
-    char file_buffer[512]; // Receiver buffer
-    char* file_name = "/tmp/test.txt";
-    FILE *file_open = fopen(file_name, "w");
-    if(file_open == NULL)
-    {
-        printf("File %s Cannot be opened file on server.\n", file_name);
-    }
-    else 
-    {
-        bzero(file_buffer, 512); 
-        int block_size = 0;
-        int i=0;
-        while((block_size = recv(sock, file_buffer, 512, 0)) > 0) 
-        {
-            printf("Data Received %d = %d\n",i,block_size);
-            int write_sz = fwrite(file_buffer, sizeof(char), block_size, file_open);
-            bzero(file_buffer, 512);
-            i++;
-        }
-        
-    }
-    printf("Transfer Complete!\n");
-    fclose(file_open); 
-    //*****************************
-}
-
-void copyFileToDestination()
-{
-    // If file entered is Sales
-    if(strcmp(FolderToSearchFor,"Sales") == 0)
-    {
-        char command[500];
-        int checker;
-        strcpy(command, "cp /tmp/test.txt /home/fayezrahman/Desktop/serverFiles/Sales");
-        system(command);
-        if(checker == -1)
-        {
-            printf("System command failed\n");
-        }
-
-        if( access( "/home/fayezrahman/Desktop/serverFiles/Sales/test.txt", F_OK ) != -1 ) 
-        {
-            char replyMessage[100] = "Transfer Sucesfully completed\n";
-            puts(replyMessage);
-        } 
-        else 
-        {
-            char replyMessage[100] = "Transfer Failed\nCheck permissions\n";
-            puts(replyMessage);
-        }
-    }
-    // If file entered is Marketing
-    if(strcmp(FolderToSearchFor,"Marketing") == 0)
-    {
-        char command[500];
-        int checker;
-        strcpy(command, "cp /tmp/test.txt /home/fayezrahman/Desktop/serverFiles/Marketing");
-        checker = system(command);
-        if(checker == -1)
-        {
-            printf("System command failed\n");
-        }
-
-        if( access( "/home/fayezrahman/Desktop/serverFiles/Marketing/test.txt", F_OK ) != -1 ) 
-        {
-            char replyMessage[100] = "Transfer Sucesfully completed\n";
-            puts(replyMessage);
-        } 
-        else 
-        {
-            char replyMessage[100]= "Transfer Failed\nCheck permissions\n";
-            puts(replyMessage);
-        }
-    }
-
-    // If file entered is Sales
-    if(strcmp(FolderToSearchFor,"Root") == 0)
-    {
-        char command[500];
-        int checker;
-        strcpy(command, "cp /tmp/test.txt /home/fayezrahman/Desktop/serverFiles/root");
-        system(command);
-        if(checker == -1)
-        {
-            printf("System command failed\n");
-        }
-
-        // if the file exist( as in fully moved sucessfully)
-        // if it doesn't exist it means they have no permission, so the file didn't move
-        if( access( "/home/fayezrahman/Desktop/serverFiles/root/test.txt", F_OK ) != -1 ) 
-        {
-            char replyMessage[100] = "Transfer Sucesfully completed\n";
-            puts(replyMessage);
-        } 
-        else 
-        {
-            char replyMessage[100] = "Transfer Failed\nCheck permissions\n";
-            puts(replyMessage);
-        }
-    }
-}
-

@@ -87,15 +87,23 @@ int main(int argc, char *argv[])
     // send file now
     sendFile(sockfd);
 
-    printf("Exiting client now..\n");
-    close(sockfd);
-    return 0;
+    //printf("Exiting client now..\n");
+    //close(sockfd);
+    //return 0;
     
+    ///home/fayezrahman/Desktop/clientFiles/fayez.txt
+    char server_reply[2000];
+    if(recv(sockfd,server_reply,2000,0 ) < 0)
+    {
+        printf("Error Receving message");
+        //break;
+    }
+    printf("Server Reply: %s \n",server_reply );
 
     /*
     while (1)
     {        
-        
+        char server_reply[2000];
         if(recv(sockfd,server_reply,2000,0 ) < 0)
         {
             printf("Error Receving message");
